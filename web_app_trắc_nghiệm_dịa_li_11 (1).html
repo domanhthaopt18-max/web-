@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Game ULTRA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .fade { animation: fade .4s ease }
+    @keyframes fade { from{opacity:0; transform:scale(.96)} to{opacity:1; transform:scale(1)} }
+    .pop { animation: pop .3s ease }
+    @keyframes pop {0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center min-h-screen">
+
+<div class="bg-white p-6 rounded-3xl shadow-2xl w-[560px] text-center">
+  <h1 class="text-2xl font-bold">🎮 QUIZ ULTRA</h1>
+
+  <div class="flex justify-between text-sm mb-2">
+    <span>⭐ <b id="score">0</b></span>
+    <span>🔥 Streak: <b id="streak">0</b></span>
+    <span>📈 Level: <b id="level">1</b></span>
+    <span>⏱️ <b id="time">15</b>s</span>
+  </div>
+
+  <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+    <div id="progress" class="bg-green-400 h-2 rounded-full"></div>
+  </div>
+
+  <div id="quiz" class="fade">
+    <p id="question" class="text-lg font-semibold mb-4"></p>
+    <div id="options" class="space-y-2"></div>
+  </div>
+
+  <p id="feedback" class="mt-3 font-bold text-lg"></p>
+
+  <button id="nextBtn" onclick="nextQ()" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-xl hidden">➡️ Tiếp</button>
+  <button onclick="restart()" class="mt-2 w-full bg-gray-300 hover:bg-gray-400 py-2 rounded-xl">🔄 Chơi lại</button>
+</div>
+
+<script>
+const qs=[
+ {q:"Năm 2020, ngành dịch vụ của Trung Quốc chiếm bao nhiêu % GDP?",o:["A. 45,5%","B. 50,0%","C. 54,5%","D. 60,5%"],a:2},
+ {q:"Ngành nào sau đây không thuộc dịch vụ của Trung Quốc?",o:["A. Thương mại","B. Nông nghiệp","C. Du lịch","D. Tài chính"],a:1},
+ {q:"Trung tâm dịch vụ lớn của Trung Quốc là:",o:["A. Tây An","B. Bắc Kinh","C. Lan Châu","D. Cáp Nhĩ Tân"],a:1},
+ {q:"Động lực quan trọng của nền kinh tế Trung Quốc là:",o:["A. Thị trường quốc tế","B. Thị trường nội địa","C. Đầu tư nước ngoài","D. Xuất khẩu"],a:1},
+ {q:"Doanh thu bán lẻ năm 2020 của Trung Quốc khoảng:",o:["A. 2400 tỉ USD","B. 3400 tỉ USD","C. 4400 tỉ USD","D. 5400 tỉ USD"],a:3},
+ {q:"Năm 2020, Trung Quốc có tổng kim ngạch ngoại thương:",o:["A. Đứng thứ 2 thế giới","B. Đứng thứ 3 thế giới","C. Lớn nhất thế giới","D. Không đáng kể"],a:2},
+ {q:"Tỉ trọng ngoại thương của Trung Quốc trong thế giới năm 2020 là:",o:["A. 8,5%","B. 9,5%","C. 10,5%","D. 11,5%"],a:3},
+ {q:"Trung Quốc có quan hệ buôn bán với:",o:["A. 100 quốc gia","B. 150 quốc gia","C. 200 quốc gia và vùng lãnh thổ","D. 250 quốc gia"],a:2},
+ {q:"Trung Quốc thường ở trạng thái:",o:["A. Nhập siêu","B. Cân bằng thương mại","C. Xuất siêu","D. Thiếu hụt thương mại"],a:2},
+ {q:"Chiều dài đường sắt của Trung Quốc là khoảng:",o:["A. 100.000 km","B. 120.000 km","C. 130.000 km","D. 150.000 km"],a:2},
+ {q:"Chiều dài đường sắt cao tốc của Trung Quốc là:",o:["A. 20.000 km","B. 30.000 km","C. 40.000 km","D. 50.000 km"],a:2},
+ {q:"Đường ô tô của Trung Quốc dài khoảng:",o:["A. 3 triệu km","B. 4 triệu km","C. 5 triệu km","D. 6 triệu km"],a:2},
+ {q:"Quốc gia đứng đầu thế giới về đường cao tốc là:",o:["A. Mỹ","B. Nhật Bản","C. Trung Quốc","D. Đức"],a:2},
+ {q:"Cảng biển lớn của Trung Quốc là:",o:["A. Tokyo","B. Busan","C. Thượng Hải","D. Singapore"],a:2},
+ {q:"Sân bay có lưu lượng lớn của Trung Quốc là:",o:["A. Incheon","B. Bắc Kinh","C. Bangkok","D. Kuala Lumpur"],a:1},
+ {q:"Trung Quốc đang đầu tư mạnh giao thông ở khu vực nào?",o:["A. Miền Đông","B. Miền Tây","C. Miền Bắc","D. Miền Nam"],a:1},
+ {q:"Năm 2019, Trung Quốc đứng thứ mấy thế giới về lượng khách du lịch quốc tế?",o:["A. Thứ 2","B. Thứ 3","C. Thứ 4","D. Thứ 5"],a:2},
+ {q:"Địa điểm du lịch nổi tiếng của Trung Quốc là:",o:["A. Kim Tự Tháp","B. Vạn Lý Trường Thành","C. Tháp Eiffel","D. Taj Mahal"],a:1},
+ {q:"Doanh thu ngành tài chính Trung Quốc năm 2020 đạt khoảng:",o:["A. 871 tỉ USD","B. 971 tỉ USD","C. 1071 tỉ USD","D. 1171 tỉ USD"],a:2},
+ {q:"Trung tâm tài chính lớn của Trung Quốc là:",o:["A. Thượng Hải","B. Bắc Kinh","C. Thành Đô","D. Tây An"],a:0}
+];
+
+let i=0,score=0,streak=0,level=1,timer,t=15;
+
+function load(){
+ clearInterval(timer); t=15; set('time',t);
+ if(i>=qs.length){ end(); return }
+ const q=qs[i];
+ set('question',`Câu ${i+1}: ${q.q}`);
+ el('options').innerHTML=''; set('feedback',''); hide('nextBtn');
+ q.o.forEach((v,idx)=>{
+  const b=btn(v,()=>choose(b,idx)); el('options').appendChild(b);
+ });
+ prog(); start();
+}
+
+function btn(text,fn){
+ const b=document.createElement('button');
+ b.innerText=text;
+ b.className='block w-full bg-gray-200 hover:bg-gray-300 py-2 rounded-xl transition';
+ b.onclick=fn; return b;
+}
+
+function choose(b,idx){
+ clearInterval(timer);
+ const q=qs[i];
+ const bs=document.querySelectorAll('#options button'); bs.forEach(x=>x.disabled=true);
+
+ if(idx===q.a){
+  streak++;
+  let bonus = streak>=3 ? "🔥 COMBO x"+streak : "";
+  let skill = streak>=5 ? "⚡ SKILL ACTIVATED!" : "";
+
+  score += 10 + t + streak*3;
+
+  if(streak % 5 === 0){ level++; set('level',level); popup("🎉 LEVEL UP!"); }
+
+  set('feedback',`✅ +${10+t+streak*3} ${bonus} ${skill}`);
+  b.classList.add('bg-green-400','pop');
+
+ }else{
+  streak=0;
+  set('feedback','❌ Sai!');
+  b.classList.add('bg-red-400');
+  bs[q.a].classList.add('bg-green-400');
+ }
+
+ set('score',score);
+ set('streak',streak);
+ show('nextBtn');
+}
+
+function start(){
+ timer=setInterval(()=>{
+  t--; set('time',t);
+  if(t<=0){ clearInterval(timer); set('feedback','⏰ Hết giờ!'); streak=0; set('streak',streak); show('nextBtn'); }
+ },1000);
+}
+
+function nextQ(){ i++; load(); }
+
+function prog(){ el('progress').style.width=(i/qs.length*100)+'%'; }
+
+function end(){
+ el('quiz').innerHTML='<h2 class="text-xl">🏆 Hoàn thành!</h2>';
+ set('feedback',`Điểm: ${score} | Level: ${level}`);
+ hide('nextBtn');
+}
+
+function restart(){ i=0; score=0; streak=0; level=1; set('score',0); set('streak',0); set('level',1); load(); }
+
+function popup(text){
+ const p=document.createElement('div');
+ p.innerText=text;
+ p.className='fixed top-10 left-1/2 -translate-x-1/2 bg-yellow-400 px-4 py-2 rounded-xl shadow-xl text-black font-bold pop';
+ document.body.appendChild(p);
+ setTimeout(()=>p.remove(),1500);
+}
+
+function el(id){ return document.getElementById(id) }
+function set(id,v){ el(id).innerText=v }
+function show(id){ el(id).classList.remove('hidden') }
+function hide(id){ el(id).classList.add('hidden') }
+
+load();
+</script>
+
+</body>
+</html>
